@@ -94,29 +94,29 @@ async def request(
     #     # an AttributeError if not available.
     #     s.settimeout(timeout)
 
+    # s.connect(ai[-1])
+    # host ai[-1][0]
+    sslctx = None
+    if not hostname:
+        hostname = host
+    if proto == "https:":
+        import ssl
+
+        sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        try:
+            import certifi.isrg
+            import certifi.digicert
+            
+            sslctx.load_verify_locations(
+                cadata=certifi.isrg.CACERTS + certifi.digicert.CACERTS
+            )
+
+        except Exception:
+            sslctx.check_hostname = False
+            sslctx.verify_mode = ssl.CERT_NONE
+
+    reader, writer = await asyncio.open_connection(host, port, ssl=sslctx)
     try:
-        # s.connect(ai[-1])
-        # host ai[-1][0]
-        sslctx = None
-        if not hostname:
-            hostname = host
-        if proto == "https:":
-            import ssl
-
-            sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-            try:
-                import certifi.isrg
-                import certifi.digicert
-
-                sslctx.load_verify_locations(
-                    cadata=certifi.isrg.CACERTS + certifi.digicert.CACERTS
-                )
-
-            except Exception:
-                sslctx.check_hostname = False
-                sslctx.verify_mode = ssl.CERT_NONE
-
-        reader, writer = await asyncio.open_connection(host, port, ssl=sslctx)
         writer.write(b"%s /%s HTTP/1.0\r\n" % (method, path))
         await writer.drain()
         if "Host" not in headers:
